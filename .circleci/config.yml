@@ -1,0 +1,139 @@
+version: 2.1
+orbs:
+  aws-cli: circleci/aws-cli@1.4.1
+jobs:
+  app_test:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore NPM Package Cache
+          keys:
+            - v1-npm-deps-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install Dependencies
+          command: |
+            npx npm@next set-script prepare '' && \
+            npx npm@next ci
+      - save_cache:
+          name: Save Package Cache
+          key: v1-npm-deps-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Run Tests
+          command: npm test
+  app_dev_build:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore NPM Package Cache
+          keys:
+            - v1-npm-deps-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install Dependencies
+          command: |
+            npx npm@next set-script prepare '' && \
+            npx npm@next ci
+      - save_cache:
+          name: Save Package Cache
+          key: v1-npm-deps-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Option
+          command: export NODE_OPTIONS=--max-old-space-size=2048
+      - run:
+          name: Building
+          command: npm run build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist
+  app_prod_build:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:lts
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore NPM Package Cache
+          keys:
+            - v1-npm-deps-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install Dependencies
+          command: |
+            npx npm@next set-script prepare '' && \
+            npx npm@next ci
+      - save_cache:
+          name: Save Package Cache
+          key: v1-npm-deps-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Option
+          command: export NODE_OPTIONS=--max-old-space-size=2048
+      - run:
+          name: Building
+          command: npm run build-prod
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist
+  app_dev_deploy:
+    working_directory: /tmp/workspace
+    executor: aws-cli/default
+    steps:
+      - attach_workspace:
+          at: .
+      - aws-cli/setup
+      - run: |
+          aws s3 sync dist s3://dev-input.embeddable.graphics --acl public-read && \
+          aws cloudfront create-invalidation --distribution-id $STAGING_CLOUDFRONT_DIST --paths "/*"
+  app_prod_deploy:
+    working_directory: /tmp/workspace
+    executor: aws-cli/default
+    steps:
+      - attach_workspace:
+          at: .
+      - aws-cli/setup
+      - run: |
+          aws s3 sync dist s3://input.embeddable.graphics --acl public-read && \
+          aws cloudfront create-invalidation --distribution-id $PROD_CLOUDFRONT_DIST --paths "/*"
+workflows:
+  version: 2
+  unit_testing:
+    jobs:
+      - app_test:
+          filters:
+            branches:
+              ignore: /dev/
+  app_dev:
+    jobs:
+      - app_dev_build:
+          context: ip3-frontend-dev
+          filters:
+            branches:
+              only: /dev/
+      - app_dev_deploy:
+          requires:
+            - app_dev_build
+  app_prod:
+    jobs:
+      - prod_hold:
+          type: approval
+          filters:
+            branches:
+              only: /main/
+      - app_prod_build:
+          context: ip3-frontend-prod
+          requires:
+            - prod_hold
+      - app_prod_deploy:
+          requires:
+            - app_prod_build

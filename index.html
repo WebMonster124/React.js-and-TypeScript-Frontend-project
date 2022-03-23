@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#FFAE63" />
+  <meta name="description" content="Turn your Data into Graphics" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Playfair+Display|Roboto|Rubik&display=swap" />
+  <link rel="stylesheet" href="/dropzone/basic.min.css" />
+  <link rel="stylesheet" href="/dropzone/dropzone.min.css" />
+  <link rel="stylesheet" href="/custom.css" />
+  <title>Eingabetool-3</title>
+</head>
+
+<body>
+  <!-- This is needed for the preview feature -->
+  <script type="text/javascript" src="https://pym.nprapps.org/pym.v1.min.js"></script>
+  <!-- App Root -->
+  <div id="root"></div>
+  <!-- Hotjar Tracking Code for https://input.embeddable.graphics/ -->
+  <script>
+    (function(h, o, t, j, a, r) {
+      h.hj =
+        h.hj ||
+        function() {
+          (h.hj.q = h.hj.q || []).push(arguments);
+        };
+      h._hjSettings = { hjid: 1785230, hjsv: 6 };
+      a = o.getElementsByTagName('head')[0];
+      r = o.createElement('script');
+      r.async = 1;
+      r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
+      a.appendChild(r);
+    })(window, document, 'https://static.hotjar.com/c/hotjar-', '.js?sv=');
+  </script>
+  <!-- Main Entry Script -->
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
